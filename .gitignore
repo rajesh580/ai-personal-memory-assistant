@@ -38,6 +38,10 @@ Thumbs.db
 frontend/.vite/
 frontend/.env
 backend/.env
+backend/data/
+
+# Generated binaries
+*.exe
 
 # Database
 backend/*.db
