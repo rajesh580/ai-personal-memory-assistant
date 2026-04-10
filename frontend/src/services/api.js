@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://127.0.0.1:8000';
+const API_BASE_URL = 'http://localhost:8000';
 
 async function request(path, options = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -48,6 +48,19 @@ export async function searchMemories(query) {
   return request('/search', {
     method: 'POST',
     body: JSON.stringify({ query }),
+  });
+}
+
+export async function deleteMemory(memoryId) {
+  return request(`/memories/${memoryId}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function updateMemory(memoryId, payload) {
+  return request(`/memories/${memoryId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
   });
 }
 

@@ -8,8 +8,11 @@ function formatScore(score) {
   return score.toFixed(3);
 }
 
-function SearchPanel({ onSearch, results, isSearching, error }) {
+function SearchPanel({ onSearch, onClear, results, isSearching, error }) {
   const [query, setQuery] = useState('');
+  const [mood, setMood] = useState('');
+  const [importance, setImportance] = useState('');
+  const [tag, setTag] = useState('');
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -18,7 +21,7 @@ function SearchPanel({ onSearch, results, isSearching, error }) {
       return;
     }
 
-    await onSearch(query.trim());
+    await onSearch(query.trim(), { mood, importance, tag });
   }
 
   return (
@@ -42,6 +45,49 @@ function SearchPanel({ onSearch, results, isSearching, error }) {
           {isSearching ? 'Searching...' : 'Search'}
         </button>
       </form>
+
+      <div className="search-filters">
+        <input
+          type="text"
+          placeholder="Filter mood"
+          value={mood}
+          onChange={(event) => setMood(event.target.value)}
+          disabled={isSearching}
+        />
+        <select
+          value={importance}
+          onChange={(event) => setImportance(event.target.value)}
+          disabled={isSearching}
+        >
+          <option value="">All importance</option>
+          <option value="1">Priority 1</option>
+          <option value="2">Priority 2</option>
+          <option value="3">Priority 3</option>
+          <option value="4">Priority 4</option>
+          <option value="5">Priority 5</option>
+        </select>
+        <input
+          type="text"
+          placeholder="Filter tag"
+          value={tag}
+          onChange={(event) => setTag(event.target.value)}
+          disabled={isSearching}
+        />
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={() => {
+            setQuery('');
+            setMood('');
+            setImportance('');
+            setTag('');
+            onClear?.();
+          }}
+          disabled={isSearching}
+        >
+          Clear search
+        </button>
+      </div>
 
       {error ? <p className="status-message error">{error}</p> : null}
 

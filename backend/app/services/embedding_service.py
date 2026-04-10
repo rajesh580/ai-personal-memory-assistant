@@ -1,7 +1,11 @@
 from pathlib import Path
+import warnings
 
 import chromadb
 from sentence_transformers import SentenceTransformer
+
+# Suppress FutureWarning from huggingface_hub
+warnings.filterwarnings("ignore", category=FutureWarning, module="huggingface_hub")
 
 
 class EmbeddingService:
@@ -10,9 +14,14 @@ class EmbeddingService:
         data_dir = base_dir / "data" / "chroma"
         data_dir.mkdir(parents=True, exist_ok=True)
 
-        self.model = SentenceTransformer("all-MiniLM-L6-v2")
+        self.model = None
         self.client = chromadb.PersistentClient(path=str(data_dir))
         self.collection = self.client.get_or_create_collection(name="memories")
+
+    def _get_model(self):
+        if self.model is None:
+            self.model = SentenceTransformer("all-MiniLM-L6-v2")
+        return self.model
 
     def build_memory_document(self, title: str, content: str, mood: str | None, tags: list[str]) -> str:
         mood_text = mood or "neutral"
@@ -20,7 +29,8 @@ class EmbeddingService:
         return f"Title: {title}\nContent: {content}\nMood: {mood_text}\nTags: {tag_text}"
 
     def embed_text(self, text: str) -> list[float]:
-        embedding = self.model.encode(text)
+        model = self._get_model()
+        embedding = model.encode(text)
         return embedding.tolist()
 
     def upsert_memory(self, memory_id: int, title: str, content: str, mood: str | None, tags: list[str]) -> None:

@@ -3,11 +3,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import SessionLocal, engine, Base
-from .models import Memory
-from .schemas import MemoryCreate, MemoryResponse
-from .services.embedding_service import EmbeddingService
+from .schemas import MemoryCreate, MemoryUpdate
 from .services.insight_service import InsightService
 from .services.memory_service import MemoryService
+
+try:
+    from .services.embedding_service import EmbeddingService
+except Exception:
+    EmbeddingService = None
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -32,8 +35,9 @@ def get_db():
         db.close()
 
 def get_memory_service():
-    embedding_service = EmbeddingService()
-    return MemoryService(embedding_service)
+    if EmbeddingService is not None:
+        return MemoryService(EmbeddingService())
+    return MemoryService()
 
 
 def get_insight_service(memory_service: MemoryService = Depends(get_memory_service)):
@@ -68,7 +72,33 @@ async def create_memory(
     db: Session = Depends(get_db),
     memory_service: MemoryService = Depends(get_memory_service)
 ):
-    return memory_service.create_memory(db, payload)
+    print(f"Creating memory: {payload}")
+    result = memory_service.create_memory(db, payload)
+    print(f"Created memory: {result}")
+    return result
+
+@app.delete("/memories/{memory_id}")
+async def delete_memory(
+    memory_id: int,
+    db: Session = Depends(get_db),
+    memory_service: MemoryService = Depends(get_memory_service)
+):
+    success = memory_service.delete_memory(db, memory_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Memory not found")
+    return {"detail": "Memory deleted"}
+
+@app.patch("/memories/{memory_id}")
+async def update_memory(
+    memory_id: int,
+    payload: MemoryUpdate,
+    db: Session = Depends(get_db),
+    memory_service: MemoryService = Depends(get_memory_service)
+):
+    updated = memory_service.update_memory(db, memory_id, payload)
+    if updated is None:
+        raise HTTPException(status_code=404, detail="Memory not found")
+    return updated
 
 @app.post("/search")
 async def search_memories(
