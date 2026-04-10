@@ -62,10 +62,12 @@ function MemoryForm({ onCreateMemory, isSubmitting }) {
           <span>Title</span>
           <input
             type="text"
+            id="memory-title"
             name="title"
             placeholder="A short title for this memory"
             value={formData.title}
             onChange={handleChange}
+            autoComplete="off"
             disabled={isSubmitting}
           />
         </label>
@@ -73,11 +75,13 @@ function MemoryForm({ onCreateMemory, isSubmitting }) {
         <label className="field">
           <span>Content</span>
           <textarea
+            id="memory-content"
             name="content"
             rows="5"
             placeholder="Describe the event, thought, or experience..."
             value={formData.content}
             onChange={handleChange}
+            autoComplete="off"
             disabled={isSubmitting}
           />
         </label>
@@ -87,10 +91,12 @@ function MemoryForm({ onCreateMemory, isSubmitting }) {
             <span>Mood</span>
             <input
               type="text"
+              id="memory-mood"
               name="mood"
               placeholder="happy, reflective, focused..."
               value={formData.mood}
               onChange={handleChange}
+              autoComplete="off"
               disabled={isSubmitting}
             />
           </label>
@@ -116,10 +122,12 @@ function MemoryForm({ onCreateMemory, isSubmitting }) {
           <span>Tags</span>
           <input
             type="text"
+            id="memory-tags"
             name="tags"
             placeholder="work, family, health, goals"
             value={formData.tags}
             onChange={handleChange}
+            autoComplete="off"
             disabled={isSubmitting}
           />
           <small>Separate tags with commas.</small>

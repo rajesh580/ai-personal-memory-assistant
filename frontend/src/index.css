@@ -1,17 +1,17 @@
 :root {
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+  font-family: "Segoe UI", Avenir, Helvetica, Arial, sans-serif;
   color: #111827;
   background: #f8fafc;
   line-height: 1.6;
   font-size: 16px;
   --bg: #f8fafc;
   --surface: #ffffff;
-  --surface-muted: #eef2ff;
+  --surface-muted: #eef6ff;
   --text: #111827;
   --text-muted: #6b7280;
-  --border: #e5e7eb;
-  --primary: #4f46e5;
-  --primary-strong: #4338ca;
+  --border: #dbe6f1;
+  --primary: #0f766e;
+  --primary-strong: #115e59;
   --success: #059669;
   --danger: #dc2626;
   --shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
@@ -26,8 +26,8 @@
   --text: #f8fafc;
   --text-muted: #94a3b8;
   --border: #374151;
-  --primary: #818cf8;
-  --primary-strong: #6366f1;
+  --primary: #5eead4;
+  --primary-strong: #2dd4bf;
   --success: #34d399;
   --danger: #f87171;
   --shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
@@ -45,12 +45,12 @@ body,
 
 body {
   margin: 0;
-  background: radial-gradient(circle at top, rgba(79, 70, 229, 0.12), transparent 28%),
-    linear-gradient(180deg, var(--bg) 0%, #f1f5f9 100%);
+  background: radial-gradient(circle at top, rgba(15, 118, 110, 0.14), transparent 28%),
+    linear-gradient(180deg, var(--bg) 0%, #eefaf7 100%);
 }
 
 :root[data-theme='dark'] body {
-  background: radial-gradient(circle at top, rgba(129, 140, 248, 0.12), transparent 28%),
+  background: radial-gradient(circle at top, rgba(45, 212, 191, 0.12), transparent 28%),
     linear-gradient(180deg, #0f172a 0%, #111827 100%);
 }
 
@@ -87,6 +87,12 @@ button {
   border: 1px solid var(--border);
   border-radius: 28px;
   box-shadow: var(--shadow);
+}
+
+.header-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
 }
 
 .app-header .eyebrow {
@@ -190,7 +196,7 @@ button {
   font-size: 0.82rem;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: #6366f1;
+  color: var(--primary);
 }
 
 .subtitle,
@@ -255,7 +261,7 @@ button {
 .panel-header-actions select:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 16%, transparent);
 }
 
 select::-ms-expand {
@@ -273,7 +279,7 @@ select option {
 .search-form select:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 16%, transparent);
 }
 
 .memory-form textarea {
@@ -300,7 +306,7 @@ select option {
 }
 
 .primary-button {
-  background: linear-gradient(90deg, #4f46e5, #6366f1);
+  background: linear-gradient(90deg, var(--primary), var(--primary-strong));
   color: #fff;
 }
 
@@ -316,8 +322,18 @@ select option {
   border: 1px solid var(--border);
 }
 
+.text-link-button {
+  margin-top: 16px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--primary);
+  font-weight: 700;
+}
+
 .search-form {
   display: grid;
+  grid-template-columns: minmax(0, 1fr) 140px auto;
   gap: 14px;
 }
 
@@ -468,6 +484,67 @@ select option {
   gap: 16px;
 }
 
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.hero-stat-card {
+  padding: 18px 20px;
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(240, 253, 250, 0.95));
+  box-shadow: var(--shadow);
+}
+
+:root[data-theme='dark'] .hero-stat-card {
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.92), rgba(15, 23, 42, 0.98));
+}
+
+.hero-stat-card span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.hero-stat-card strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 2rem;
+}
+
+.highlight-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.highlight-chip {
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+}
+
+.auth-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.auth-card {
+  width: min(100%, 520px);
+  padding: 32px;
+  border-radius: 28px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
 .stat-card,
 .summary-card {
   min-height: 120px;
@@ -484,7 +561,9 @@ select option {
 
   .stats-grid,
   .insight-columns,
-  .form-grid {
+  .form-grid,
+  .hero-stats,
+  .search-form {
     grid-template-columns: 1fr;
   }
 }

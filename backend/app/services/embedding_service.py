@@ -33,21 +33,36 @@ class EmbeddingService:
         embedding = model.encode(text)
         return embedding.tolist()
 
-    def upsert_memory(self, memory_id: int, title: str, content: str, mood: str | None, tags: list[str]) -> None:
+    def build_document_id(self, user_id: int, memory_id: int) -> str:
+        return f"{user_id}:{memory_id}"
+
+    def parse_document_id(self, value: str) -> tuple[int, int] | None:
+        if ":" not in value:
+            return None
+        left, right = value.split(":", 1)
+        if not left.isdigit() or not right.isdigit():
+            return None
+        return int(left), int(right)
+
+    def upsert_memory(self, user_id: int, memory_id: int, title: str, content: str, mood: str | None, tags: list[str]) -> None:
         document = self.build_memory_document(title, content, mood, tags)
         embedding = self.embed_text(document)
         self.collection.upsert(
-            ids=[str(memory_id)],
+            ids=[self.build_document_id(user_id, memory_id)],
             documents=[document],
             embeddings=[embedding],
             metadatas=[
                 {
+                    "user_id": str(user_id),
                     "title": title,
                     "mood": mood or "",
                     "tags": ", ".join(tags),
                 }
             ],
         )
+
+    def delete_memory(self, user_id: int, memory_id: int) -> None:
+        self.collection.delete(ids=[self.build_document_id(user_id, memory_id)])
 
     def search(self, query: str, limit: int = 5) -> tuple[list[str], list[float]]:
         embedding = self.embed_text(query)

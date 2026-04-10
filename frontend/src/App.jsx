@@ -1,21 +1,159 @@
 import { useEffect, useState } from 'react';
+import AuthPanel from './components/AuthPanel';
 import InsightsPanel from './components/InsightsPanel';
 import MemoryForm from './components/MemoryForm';
 import MemoryList from './components/MemoryList';
 import SearchPanel from './components/SearchPanel';
 import {
-  fetchMemories,
   createMemory,
-  searchMemories,
   deleteMemory,
-  updateMemory,
+  exportMemories,
+  fetchCurrentUser,
   fetchInsights,
+  fetchMemories,
+  getStoredToken,
+  loginUser,
+  logoutUser,
+  registerUser,
+  searchMemories,
+  setAuthToken,
+  updateMemory,
 } from './services/api';
+
+function AppContent({
+  user,
+  theme,
+  setTheme,
+  memories,
+  insights,
+  searchResults,
+  sortOption,
+  setSortOption,
+  isLoadingMemories,
+  isLoadingInsights,
+  isSearching,
+  isSubmitting,
+  isExporting,
+  memoriesError,
+  searchError,
+  insightsError,
+  onCreateMemory,
+  onSearch,
+  onClearSearch,
+  onDeleteMemory,
+  onUpdateMemory,
+  onRefreshInsights,
+  onExportMemories,
+  onLogout,
+}) {
+  const sortedMemories = [...memories].sort((a, b) => {
+    if (sortOption === 'importance') {
+      return (b.importance ?? 0) - (a.importance ?? 0);
+    }
+    if (sortOption === 'title') {
+      return (a.title || '').localeCompare(b.title || '');
+    }
+    return new Date(b.created_at) - new Date(a.created_at);
+  });
+
+  const quickStats = {
+    total: memories.length,
+    highPriority: memories.filter((memory) => (memory.importance ?? 0) >= 4).length,
+    tagged: memories.filter((memory) => Array.isArray(memory.tags) && memory.tags.length > 0).length,
+    moodsTracked: new Set(
+      memories.map((memory) => memory.mood?.trim()).filter(Boolean)
+    ).size,
+  };
+
+  return (
+    <div className="app-shell">
+      <header className="app-header">
+        <div>
+          <p className="eyebrow">AI Personal Memory Assistant</p>
+          <h1>Capture your moments and keep them private.</h1>
+          <p className="subtitle">
+            Signed in as <strong>{user.email}</strong>. Your memories, search results, and insights
+            are now isolated to your account only.
+          </p>
+        </div>
+        <div className="header-actions">
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={() => setTheme((current) => (current === 'light' ? 'dark' : 'light'))}
+          >
+            {theme === 'light' ? 'Dark mode' : 'Light mode'}
+          </button>
+          <button className="secondary-button" type="button" onClick={onLogout}>
+            Log out
+          </button>
+        </div>
+      </header>
+
+      <section className="hero-stats">
+        <article className="hero-stat-card">
+          <span>Total captured</span>
+          <strong>{quickStats.total}</strong>
+        </article>
+        <article className="hero-stat-card">
+          <span>High priority</span>
+          <strong>{quickStats.highPriority}</strong>
+        </article>
+        <article className="hero-stat-card">
+          <span>Tagged memories</span>
+          <strong>{quickStats.tagged}</strong>
+        </article>
+        <article className="hero-stat-card">
+          <span>Moods tracked</span>
+          <strong>{quickStats.moodsTracked}</strong>
+        </article>
+      </section>
+
+      <main className="main-grid">
+        <div className="left-column">
+          <MemoryForm onCreateMemory={onCreateMemory} isSubmitting={isSubmitting} />
+          <InsightsPanel
+            insights={insights}
+            isLoading={isLoadingInsights}
+            error={insightsError}
+            onRefresh={onRefreshInsights}
+            onExport={onExportMemories}
+            isExporting={isExporting}
+          />
+        </div>
+
+        <div className="right-column">
+          <SearchPanel
+            onSearch={onSearch}
+            onClear={onClearSearch}
+            results={searchResults}
+            isSearching={isSearching}
+            error={searchError}
+          />
+          <MemoryList
+            memories={sortedMemories}
+            isLoading={isLoadingMemories}
+            error={memoriesError}
+            sortOption={sortOption}
+            onChangeSort={setSortOption}
+            onDeleteMemory={onDeleteMemory}
+            onUpdateMemory={onUpdateMemory}
+          />
+        </div>
+      </main>
+    </div>
+  );
+}
 
 export default function App() {
   const [memories, setMemories] = useState([]);
   const [insights, setInsights] = useState(null);
   const [searchResults, setSearchResults] = useState([]);
+  const [user, setUser] = useState(null);
+  const [authMode, setAuthMode] = useState('login');
+  const [authError, setAuthError] = useState('');
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [isCheckingSession, setIsCheckingSession] = useState(Boolean(getStoredToken()));
   const [theme, setTheme] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = window.localStorage.getItem('memory-app-theme');
@@ -28,14 +166,10 @@ export default function App() {
   const [isLoadingInsights, setIsLoadingInsights] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [memoriesError, setMemoriesError] = useState('');
   const [searchError, setSearchError] = useState('');
   const [insightsError, setInsightsError] = useState('');
-
-  useEffect(() => {
-    loadMemories();
-    loadInsights();
-  }, []);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -44,6 +178,39 @@ export default function App() {
     }
   }, [theme]);
 
+  useEffect(() => {
+    async function restoreSession() {
+      const token = getStoredToken();
+      if (!token) {
+        setIsCheckingSession(false);
+        return;
+      }
+
+      try {
+        const currentUser = await fetchCurrentUser();
+        setUser(currentUser);
+      } catch (error) {
+        setAuthToken('');
+      } finally {
+        setIsCheckingSession(false);
+      }
+    }
+
+    restoreSession();
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setMemories([]);
+      setInsights(null);
+      setSearchResults([]);
+      return;
+    }
+
+    loadMemories();
+    loadInsights();
+  }, [user]);
+
   async function loadMemories() {
     setMemoriesError('');
     setIsLoadingMemories(true);
@@ -51,7 +218,7 @@ export default function App() {
       const data = await fetchMemories();
       setMemories(Array.isArray(data) ? data : []);
     } catch (error) {
-      setMemoriesError(error.message || 'Unable to load memories.');
+      handleProtectedError(error, setMemoriesError, 'Unable to load memories.');
     } finally {
       setIsLoadingMemories(false);
     }
@@ -64,9 +231,51 @@ export default function App() {
       const data = await fetchInsights();
       setInsights(data);
     } catch (error) {
-      setInsightsError(error.message || 'Unable to load insights.');
+      handleProtectedError(error, setInsightsError, 'Unable to load insights.');
     } finally {
       setIsLoadingInsights(false);
+    }
+  }
+
+  function handleProtectedError(error, setter, fallbackMessage) {
+    const message = error.message || fallbackMessage;
+    if (message.toLowerCase().includes('authentication') || message.toLowerCase().includes('session')) {
+      setAuthToken('');
+      setUser(null);
+      setter('Your session ended. Please sign in again.');
+      return;
+    }
+    setter(message);
+  }
+
+  async function handleAuthenticate(payload) {
+    setAuthError('');
+    setIsAuthenticating(true);
+    try {
+      const data =
+        authMode === 'login' ? await loginUser(payload) : await registerUser(payload);
+      setAuthToken(data.token);
+      setUser(data.user);
+      setSearchResults([]);
+      setMemoriesError('');
+      setSearchError('');
+      setInsightsError('');
+    } catch (error) {
+      setAuthError(error.message || 'Authentication failed.');
+    } finally {
+      setIsAuthenticating(false);
+    }
+  }
+
+  async function handleLogout() {
+    try {
+      await logoutUser();
+    } catch (error) {
+      // Ignore logout errors and clear local session regardless.
+    } finally {
+      setAuthToken('');
+      setUser(null);
+      setAuthMode('login');
     }
   }
 
@@ -83,36 +292,14 @@ export default function App() {
     }
   }
 
-  async function handleSearch(query, filters = {}) {
+  async function handleSearch(payload) {
     setSearchError('');
     setIsSearching(true);
     try {
-      const results = await searchMemories(query);
-      let filtered = Array.isArray(results) ? results : [];
-
-      if (filters.mood) {
-        filtered = filtered.filter((item) =>
-          item.memory?.mood?.toLowerCase().includes(filters.mood.toLowerCase())
-        );
-      }
-
-      if (filters.importance) {
-        filtered = filtered.filter(
-          (item) => item.memory?.importance === Number(filters.importance)
-        );
-      }
-
-      if (filters.tag) {
-        filtered = filtered.filter((item) =>
-          item.memory?.tags?.some((tag) =>
-            tag.toLowerCase().includes(filters.tag.toLowerCase())
-          )
-        );
-      }
-
-      setSearchResults(filtered);
+      const results = await searchMemories(payload);
+      setSearchResults(Array.isArray(results) ? results : []);
     } catch (error) {
-      setSearchError(error.message || 'Search failed.');
+      handleProtectedError(error, setSearchError, 'Search failed.');
     } finally {
       setIsSearching(false);
     }
@@ -134,7 +321,7 @@ export default function App() {
       await loadInsights();
       setSearchResults((current) => current.filter((item) => item.memory?.id !== memoryId));
     } catch (error) {
-      setMemoriesError(error.message || 'Unable to delete memory.');
+      handleProtectedError(error, setMemoriesError, 'Unable to delete memory.');
     }
   }
 
@@ -151,69 +338,82 @@ export default function App() {
         )
       );
     } catch (error) {
-      setMemoriesError(error.message || 'Unable to update memory.');
+      handleProtectedError(error, setMemoriesError, 'Unable to update memory.');
     }
   }
 
-  const sortedMemories = [...memories].sort((a, b) => {
-    if (sortOption === 'importance') {
-      return (b.importance ?? 0) - (a.importance ?? 0);
+  async function handleExportMemories() {
+    setInsightsError('');
+    setIsExporting(true);
+    try {
+      const data = await exportMemories();
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: 'application/json',
+      });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `${user.email.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-memories.json`;
+      link.click();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      handleProtectedError(error, setInsightsError, 'Unable to export memories.');
+    } finally {
+      setIsExporting(false);
     }
-    if (sortOption === 'title') {
-      return (a.title || '').localeCompare(b.title || '');
-    }
-    return new Date(b.created_at) - new Date(a.created_at);
-  });
+  }
+
+  if (isCheckingSession) {
+    return (
+      <div className="auth-shell">
+        <section className="auth-card">
+          <p className="status-message">Restoring your session...</p>
+        </section>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <AuthPanel
+        mode={authMode}
+        onSubmit={handleAuthenticate}
+        isSubmitting={isAuthenticating}
+        onSwitchMode={() => {
+          setAuthError('');
+          setAuthMode((current) => (current === 'login' ? 'register' : 'login'));
+        }}
+        error={authError}
+      />
+    );
+  }
 
   return (
-    <div className="app-shell">
-      <header className="app-header">
-        <div>
-          <p className="eyebrow">AI Personal Memory Assistant</p>
-          <h1>Capture your moments and recall them later.</h1>
-          <p className="subtitle">
-            Add memories, search them semantically, and review insights from your stored moments.
-          </p>
-        </div>
-        <button
-          className="secondary-button"
-          type="button"
-          onClick={() => setTheme((current) => (current === 'light' ? 'dark' : 'light'))}
-        >
-          {theme === 'light' ? 'Dark mode' : 'Light mode'}
-        </button>
-      </header>
-
-      <main className="main-grid">
-        <div className="left-column">
-          <MemoryForm onCreateMemory={handleCreateMemory} isSubmitting={isSubmitting} />
-          <InsightsPanel
-            insights={insights}
-            isLoading={isLoadingInsights}
-            error={insightsError}
-            onRefresh={loadInsights}
-          />
-        </div>
-
-        <div className="right-column">
-          <SearchPanel
-            onSearch={handleSearch}
-            onClear={handleClearSearch}
-            results={searchResults}
-            isSearching={isSearching}
-            error={searchError}
-          />
-          <MemoryList
-            memories={sortedMemories}
-            isLoading={isLoadingMemories}
-            error={memoriesError}
-            sortOption={sortOption}
-            onChangeSort={setSortOption}
-            onDeleteMemory={handleDeleteMemory}
-            onUpdateMemory={handleUpdateMemory}
-          />
-        </div>
-      </main>
-    </div>
+    <AppContent
+      user={user}
+      theme={theme}
+      setTheme={setTheme}
+      memories={memories}
+      insights={insights}
+      searchResults={searchResults}
+      sortOption={sortOption}
+      setSortOption={setSortOption}
+      isLoadingMemories={isLoadingMemories}
+      isLoadingInsights={isLoadingInsights}
+      isSearching={isSearching}
+      isSubmitting={isSubmitting}
+      isExporting={isExporting}
+      memoriesError={memoriesError}
+      searchError={searchError}
+      insightsError={insightsError}
+      onCreateMemory={handleCreateMemory}
+      onSearch={handleSearch}
+      onClearSearch={handleClearSearch}
+      onDeleteMemory={handleDeleteMemory}
+      onUpdateMemory={handleUpdateMemory}
+      onRefreshInsights={loadInsights}
+      onExportMemories={handleExportMemories}
+      onLogout={handleLogout}
+    />
   );
 }

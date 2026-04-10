@@ -1,6 +1,38 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
+
+
+class UserAuthBase(BaseModel):
+    email: EmailStr
+    password: str = Field(..., min_length=6, max_length=128)
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def normalize_email(cls, value):
+        return str(value).strip().lower()
+
+
+class UserRegister(UserAuthBase):
+    pass
+
+
+class UserLogin(UserAuthBase):
+    pass
+
+
+class UserResponse(BaseModel):
+    id: int
+    email: EmailStr
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class AuthResponse(BaseModel):
+    token: str
+    user: UserResponse
 
 
 class MemoryCreate(BaseModel):
@@ -97,11 +129,24 @@ class MemoryResponse(BaseModel):
 
 class SearchRequest(BaseModel):
     query: str = Field(..., min_length=1)
+    mood: str | None = None
+    importance: int | None = Field(default=None, ge=1, le=5)
+    tag: str | None = None
+    limit: int = Field(default=5, ge=1, le=25)
+
+    @field_validator("query", "mood", "tag", mode="before")
+    @classmethod
+    def strip_query(cls, value):
+        if value is None:
+            return value
+        value = value.strip()
+        if value == "":
+            return None
+        return value
 
     @field_validator("query")
     @classmethod
-    def strip_query(cls, value):
-        value = value.strip()
+    def ensure_query(cls, value):
         if not value:
             raise ValueError("Query cannot be empty.")
         return value
@@ -120,8 +165,13 @@ class InsightTag(BaseModel):
 
 class InsightsResponse(BaseModel):
     total_memories: int
+    average_importance: float
     mood_distribution: dict[str, int]
     top_tags: list[InsightTag]
     important_memories: list[MemoryResponse]
     recent_memories: list[MemoryResponse]
+    memories_last_7_days: int
+    memories_last_30_days: int
+    busiest_day: str | None
+    mood_highlights: list[str]
     generated_summary: str

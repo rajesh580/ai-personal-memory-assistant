@@ -13,6 +13,8 @@ function SearchPanel({ onSearch, onClear, results, isSearching, error }) {
   const [mood, setMood] = useState('');
   const [importance, setImportance] = useState('');
   const [tag, setTag] = useState('');
+  const [limit, setLimit] = useState('5');
+  const [hasSearched, setHasSearched] = useState(false);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -21,7 +23,14 @@ function SearchPanel({ onSearch, onClear, results, isSearching, error }) {
       return;
     }
 
-    await onSearch(query.trim(), { mood, importance, tag });
+    setHasSearched(true);
+    await onSearch({
+      query: query.trim(),
+      mood: mood.trim() || undefined,
+      importance: importance ? Number(importance) : undefined,
+      tag: tag.trim() || undefined,
+      limit: Number(limit),
+    });
   }
 
   return (
@@ -41,6 +50,15 @@ function SearchPanel({ onSearch, onClear, results, isSearching, error }) {
           onChange={(event) => setQuery(event.target.value)}
           disabled={isSearching}
         />
+        <select
+          value={limit}
+          onChange={(event) => setLimit(event.target.value)}
+          disabled={isSearching}
+        >
+          <option value="5">Top 5</option>
+          <option value="10">Top 10</option>
+          <option value="15">Top 15</option>
+        </select>
         <button className="primary-button" type="submit" disabled={isSearching}>
           {isSearching ? 'Searching...' : 'Search'}
         </button>
@@ -81,6 +99,8 @@ function SearchPanel({ onSearch, onClear, results, isSearching, error }) {
             setMood('');
             setImportance('');
             setTag('');
+            setLimit('5');
+            setHasSearched(false);
             onClear?.();
           }}
           disabled={isSearching}
@@ -91,9 +111,15 @@ function SearchPanel({ onSearch, onClear, results, isSearching, error }) {
 
       {error ? <p className="status-message error">{error}</p> : null}
 
-      {!error && results.length === 0 ? (
+      {!error && !hasSearched ? (
         <div className="empty-state compact">
-          <p>Search results will appear here.</p>
+          <p>Try a phrase like "family trip", "stress at work", or "when I felt proud".</p>
+        </div>
+      ) : null}
+
+      {!error && hasSearched && results.length === 0 ? (
+        <div className="empty-state compact">
+          <p>No memories matched that search and filter combination.</p>
         </div>
       ) : null}
 

@@ -6,3 +6,4 @@ sentence-transformers==2.6.1
 pydantic==2.12.5
 transformers==4.39.3
 torch==2.11.0
+email-validator==2.2.0

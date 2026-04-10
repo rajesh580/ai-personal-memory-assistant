@@ -11,10 +11,13 @@ A full-stack AI Personal Memory Assistant built with FastAPI, React, SQLite, Chr
 
 ## Key features
 
-- Add memories with mood, tags, and importance.
-- Save memories to SQLite and embed them using ChromaDB.
-- Semantic search over memory content.
-- Generate insights from stored memories.
+- Register and sign in to a private account.
+- Keep memories scoped to the currently logged-in user only.
+- Add, edit, delete, and organize memories with mood, tags, and importance.
+- Save memories to SQLite and keep semantic embeddings in sync with ChromaDB.
+- Semantic search with server-side filters for mood, tag, importance, and result limits.
+- Generate richer insights with average priority, recent activity, mood highlights, and top themes.
+- Export all memories as JSON for backup or portability.
 
 ## Backend setup (Windows)
 
@@ -33,7 +36,7 @@ A full-stack AI Personal Memory Assistant built with FastAPI, React, SQLite, Chr
    ```
 5. Run the FastAPI backend:
    ```bat
-   uvicorn app.main:app --reload --host 127.0.0.1 --port 8000 --app-dir backend
+   python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000 --app-dir backend
    ```
 
 Backend server:
@@ -80,6 +83,11 @@ gh repo create <repo-name> --public --source=. --remote=origin
 
 ## Notes
 
+- Authentication endpoints are available at `POST /auth/register`, `POST /auth/login`, `GET /auth/me`, and `POST /auth/logout`.
 - The backend API does not use an `/api` prefix; endpoints are mounted at the root.
+- Memory export is available at `GET /memories/export/all`.
+- Search is available at `POST /search` with `query`, optional `mood`, `tag`, `importance`, and `limit`.
+- For local development, start the backend with `--app-dir backend`; omitting it can cause startup/import failures and the frontend may show `Failed to fetch`.
+- Existing shared memories from older versions are assigned to a local legacy account during schema upgrade.
 - Keep `.venv/`, `node_modules/`, and local database files out of source control.
 - Run backend and frontend separately while developing.

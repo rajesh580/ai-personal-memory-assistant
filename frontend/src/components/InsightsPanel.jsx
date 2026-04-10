@@ -69,7 +69,23 @@ function MemoryMiniList({ items, emptyMessage }) {
   );
 }
 
-function InsightsPanel({ insights, isLoading, error, onRefresh }) {
+function renderHighlights(items) {
+  if (!Array.isArray(items) || items.length === 0) {
+    return <p className="muted-text">Highlights will appear as more memories are added.</p>;
+  }
+
+  return (
+    <div className="highlight-list">
+      {items.map((item, index) => (
+        <div className="highlight-chip" key={`${item}-${index}`}>
+          {item}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function InsightsPanel({ insights, isLoading, error, onRefresh, onExport, isExporting }) {
   return (
     <section className="panel">
       <div className="panel-header">
@@ -77,9 +93,14 @@ function InsightsPanel({ insights, isLoading, error, onRefresh }) {
           <p className="eyebrow">AI overview</p>
           <h2>Insights and patterns</h2>
         </div>
-        <button className="secondary-button" type="button" onClick={onRefresh} disabled={isLoading}>
-          {isLoading ? 'Refreshing...' : 'Refresh insights'}
-        </button>
+        <div className="panel-header-actions">
+          <button className="secondary-button" type="button" onClick={onExport} disabled={isExporting}>
+            {isExporting ? 'Exporting...' : 'Export JSON'}
+          </button>
+          <button className="secondary-button" type="button" onClick={onRefresh} disabled={isLoading}>
+            {isLoading ? 'Refreshing...' : 'Refresh insights'}
+          </button>
+        </div>
       </div>
 
       {error ? <p className="status-message error">{error}</p> : null}
@@ -98,6 +119,18 @@ function InsightsPanel({ insights, isLoading, error, onRefresh }) {
               <strong>{insights.total_memories ?? 0}</strong>
             </div>
             <div className="stat-card">
+              <span>Average priority</span>
+              <strong>{insights.average_importance?.toFixed?.(2) ?? '0.00'}</strong>
+            </div>
+            <div className="stat-card">
+              <span>Last 7 days</span>
+              <strong>{insights.memories_last_7_days ?? 0}</strong>
+            </div>
+            <div className="stat-card">
+              <span>Last 30 days</span>
+              <strong>{insights.memories_last_30_days ?? 0}</strong>
+            </div>
+            <div className="stat-card">
               <span>Tracked moods</span>
               <strong>{Object.keys(insights.mood_distribution || {}).length}</strong>
             </div>
@@ -105,6 +138,14 @@ function InsightsPanel({ insights, isLoading, error, onRefresh }) {
               <span>Top tags</span>
               <strong>{Array.isArray(insights.top_tags) ? insights.top_tags.length : 0}</strong>
             </div>
+          </div>
+
+          <div className="insight-card">
+            <h3>Mood highlights</h3>
+            {renderHighlights(insights.mood_highlights)}
+            {insights.busiest_day ? (
+              <p className="muted-text">Most active capture day: {insights.busiest_day}</p>
+            ) : null}
           </div>
 
           <div className="insight-columns">
