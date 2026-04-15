@@ -1,6 +1,11 @@
 from collections import Counter
 from datetime import datetime, timedelta
 
+try:
+    from ollama import AsyncClient
+except ImportError:
+    AsyncClient = None
+
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
@@ -12,7 +17,7 @@ class InsightService:
     def __init__(self, memory_service: MemoryService):
         self.memory_service = memory_service
 
-    def generate_insights(self, db: Session, user: User) -> dict:
+    async def generate_insights(self, db: Session, user: User) -> dict:
         memories = (
             db.query(Memory)
             .filter(Memory.user_id == user.id)
@@ -51,7 +56,7 @@ class InsightService:
         busiest_day = day_counter.most_common(1)[0][0] if day_counter else None
         mood_highlights = self.build_mood_highlights(mood_distribution, total_memories)
 
-        summary = self.build_summary(
+        summary = await self.build_summary(
             total_memories=total_memories,
             mood_distribution=mood_distribution,
             tag_counter=tag_counter,
@@ -74,7 +79,7 @@ class InsightService:
             "generated_summary": summary,
         }
 
-    def build_summary(
+    async def build_summary(
         self,
         total_memories: int,
         mood_distribution: Counter,
@@ -103,8 +108,29 @@ class InsightService:
         if last_7_days:
             parts.append(f"You captured {last_7_days} memories in the last 7 days.")
 
-        parts.append("This summary is generated using lightweight heuristics from your saved memories and search metadata.")
-        return " ".join(parts)
+        heuristic_summary = " ".join(parts)
+
+        if AsyncClient:
+            prompt = (
+                "You are an empathetic personal memory assistant analyzing a user's memory journal.\n"
+                f"Here are the user's current memory statistics:\n"
+                f"- Total memories: {total_memories}\n"
+                f"- Memories in last 7 days: {last_7_days}\n"
+                f"- Average importance (1-5): {average_importance:.2f}\n"
+                f"- Most common mood: {most_common_mood}\n"
+                f"- Top themes/tags: {', '.join(common_tags) if common_tags else 'None'}\n"
+                f"- Recent important memories: {', '.join(top_titles) if top_titles else 'None'}\n\n"
+                "Write a brief, warm, and insightful 2-3 sentence summary of their journaling activity. "
+                "Speak directly to the user (e.g., 'You have been focusing on...'). Do not use formatting like bold or lists, just a plain text paragraph."
+            )
+            try:
+                response = await AsyncClient().generate(model='llama3.2', prompt=prompt)
+                return response['response'].strip()
+            except Exception as e:
+                print(f"Failed to generate AI summary: {e}")
+                return heuristic_summary + " (AI generation temporarily unavailable)"
+
+        return heuristic_summary + " This summary is generated using lightweight heuristics from your saved memories and search metadata."
 
     def build_mood_highlights(self, mood_distribution: Counter, total_memories: int) -> list[str]:
         if total_memories == 0 or not mood_distribution:

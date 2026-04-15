@@ -19,6 +19,19 @@ A full-stack AI Personal Memory Assistant built with FastAPI, React, SQLite, Chr
 - Generate richer insights with average priority, recent activity, mood highlights, and top themes.
 - Export all memories as JSON for backup or portability.
 
+## Local LLM setup (Windows)
+
+To enable the local, fully private Chat Agent, install Ollama and run a lightweight model:
+
+1. Open PowerShell and run the install command:
+   ```powershell
+   irm https://ollama.com/install.ps1 | iex
+   ```
+2. Once installed, download and start the Llama 3.2 model (leave this terminal running in the background):
+   ```bat
+   ollama run llama3.2
+   ```
+
 ## Backend setup (Windows)
 
 1. Open a terminal in the project root.

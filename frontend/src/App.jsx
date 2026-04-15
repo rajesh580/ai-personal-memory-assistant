@@ -4,6 +4,8 @@ import InsightsPanel from './components/InsightsPanel';
 import MemoryForm from './components/MemoryForm';
 import MemoryList from './components/MemoryList';
 import SearchPanel from './components/SearchPanel';
+import NavBar from './components/NavBar';
+import ChatAgent from './components/ChatAgent';
 import {
   createMemory,
   deleteMemory,
@@ -45,6 +47,12 @@ function AppContent({
   onRefreshInsights,
   onExportMemories,
   onLogout,
+  currentPage,
+  setCurrentPage,
+  isInlineChatOpen,
+  setIsInlineChatOpen,
+  isNavChatOpen,
+  setIsNavChatOpen,
 }) {
   const sortedMemories = [...memories].sort((a, b) => {
     if (sortOption === 'importance') {
@@ -67,85 +75,180 @@ function AppContent({
 
   return (
     <div className="app-shell">
+      <NavBar
+        user={user}
+        theme={theme}
+        setTheme={setTheme}
+        onLogout={onLogout}
+        currentPage={currentPage}
+        setCurrentPage={setCurrentPage}
+        onToggleChat={() => setIsNavChatOpen((prev) => !prev)}
+      />
       <header className="app-header">
-        <div>
-          <p className="eyebrow">AI Personal Memory Assistant</p>
-          <h1>Capture your moments and keep them private.</h1>
-          <p className="subtitle">
-            Signed in as <strong>{user.email}</strong>. Your memories, search results, and insights
-            are now isolated to your account only.
-          </p>
-        </div>
-        <div className="header-actions">
-          <button
-            className="secondary-button"
-            type="button"
-            onClick={() => setTheme((current) => (current === 'light' ? 'dark' : 'light'))}
-          >
-            {theme === 'light' ? 'Dark mode' : 'Light mode'}
-          </button>
-          <button className="secondary-button" type="button" onClick={onLogout}>
-            Log out
-          </button>
-        </div>
+        {currentPage === 'dashboard' && (
+          <div>
+            <p className="eyebrow">Welcome back, {user.email.split('@')[0]}</p>
+            <h1>Your Personal Memory Dashboard</h1>
+            <p className="subtitle">Here's a snapshot of your captured moments and insights.</p>
+          </div>
+        )}
+        {currentPage === 'memories' && (
+          <div>
+            <p className="eyebrow">Search and browse</p>
+            <h1>Memory Vault</h1>
+            <p className="subtitle">Search through your past entries or browse them all.</p>
+          </div>
+        )}
+        {currentPage === 'settings' && (
+          <div>
+            <p className="eyebrow">Preferences</p>
+            <h1>Account Settings</h1>
+            <p className="subtitle">Manage your account, appearance, and data.</p>
+          </div>
+        )}
       </header>
 
-      <section className="hero-stats">
-        <article className="hero-stat-card">
-          <span>Total captured</span>
-          <strong>{quickStats.total}</strong>
-        </article>
-        <article className="hero-stat-card">
-          <span>High priority</span>
-          <strong>{quickStats.highPriority}</strong>
-        </article>
-        <article className="hero-stat-card">
-          <span>Tagged memories</span>
-          <strong>{quickStats.tagged}</strong>
-        </article>
-        <article className="hero-stat-card">
-          <span>Moods tracked</span>
-          <strong>{quickStats.moodsTracked}</strong>
-        </article>
-      </section>
+      {currentPage === 'dashboard' && (
+        <>
+          <section className="hero-stats">
+            <article className="hero-stat-card">
+              <span>Total captured</span>
+              <strong>{quickStats.total}</strong>
+            </article>
+            <article className="hero-stat-card">
+              <span>High priority</span>
+              <strong>{quickStats.highPriority}</strong>
+            </article>
+            <article className="hero-stat-card">
+              <span>Tagged memories</span>
+              <strong>{quickStats.tagged}</strong>
+            </article>
+            <article className="hero-stat-card">
+              <span>Moods tracked</span>
+              <strong>{quickStats.moodsTracked}</strong>
+            </article>
+          </section>
 
-      <main className="main-grid">
-        <div className="left-column">
-          <MemoryForm onCreateMemory={onCreateMemory} isSubmitting={isSubmitting} />
-          <InsightsPanel
-            insights={insights}
-            isLoading={isLoadingInsights}
-            error={insightsError}
-            onRefresh={onRefreshInsights}
-            onExport={onExportMemories}
-            isExporting={isExporting}
-          />
-        </div>
+          <main className="main-grid">
+            <div className="left-column">
+              <MemoryForm 
+                onCreateMemory={onCreateMemory} 
+                isSubmitting={isSubmitting} 
+                user={user}
+                isInlineChatOpen={isInlineChatOpen}
+                setIsInlineChatOpen={setIsInlineChatOpen}
+              />
+            </div>
+            <div className="right-column">
+              <InsightsPanel
+                insights={insights}
+                isLoading={isLoadingInsights}
+                error={insightsError}
+                onRefresh={onRefreshInsights}
+                onExport={onExportMemories}
+                isExporting={isExporting}
+              />
+            </div>
+          </main>
+        </>
+      )}
 
-        <div className="right-column">
-          <SearchPanel
-            onSearch={onSearch}
-            onClear={onClearSearch}
-            results={searchResults}
-            isSearching={isSearching}
-            error={searchError}
-          />
-          <MemoryList
-            memories={sortedMemories}
-            isLoading={isLoadingMemories}
-            error={memoriesError}
-            sortOption={sortOption}
-            onChangeSort={setSortOption}
-            onDeleteMemory={onDeleteMemory}
-            onUpdateMemory={onUpdateMemory}
-          />
-        </div>
-      </main>
+      {currentPage === 'memories' && (
+        <main className="main-grid">
+          <div className="left-column">
+            <SearchPanel
+              onSearch={onSearch}
+              onClear={onClearSearch}
+              results={searchResults}
+              isSearching={isSearching}
+              error={searchError}
+            />
+          </div>
+          <div className="right-column">
+            <MemoryList
+              memories={sortedMemories}
+              isLoading={isLoadingMemories}
+              error={memoriesError}
+              sortOption={sortOption}
+              onChangeSort={setSortOption}
+              onDeleteMemory={onDeleteMemory}
+              onUpdateMemory={onUpdateMemory}
+            />
+          </div>
+        </main>
+      )}
+
+      {currentPage === 'settings' && (
+        <main className="main-grid">
+          <div className="left-column">
+            <section className="panel">
+              <div className="panel-header">
+                <div>
+                  <p className="eyebrow">Profile</p>
+                  <h2>Account Details</h2>
+                </div>
+              </div>
+              <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div>
+                  <p className="muted-text">Email Address</p>
+                  <p><strong>{user.email}</strong></p>
+                </div>
+              </div>
+            </section>
+
+            <section className="panel" style={{ marginTop: '2rem' }}>
+              <div className="panel-header">
+                <div>
+                  <p className="eyebrow">Data</p>
+                  <h2>Export & Data</h2>
+                </div>
+              </div>
+              <div style={{ padding: '1rem' }}>
+                <p style={{ marginBottom: '1rem' }}>Download a complete JSON backup of your memories.</p>
+                <button className="secondary-button" onClick={onExportMemories} disabled={isExporting}>
+                  {isExporting ? 'Exporting...' : 'Export All Data'}
+                </button>
+              </div>
+            </section>
+          </div>
+
+          <div className="right-column">
+            <section className="panel">
+              <div className="panel-header">
+                <div>
+                  <p className="eyebrow">System</p>
+                  <h2>Preferences</h2>
+                </div>
+              </div>
+              <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div>
+                  <p style={{ marginBottom: '0.5rem' }}>Theme Preference</p>
+                  <button
+                    className="secondary-button"
+                    onClick={() => setTheme((current) => (current === 'light' ? 'dark' : 'light'))}
+                  >
+                    Switch to {theme === 'light' ? 'Dark' : 'Light'} Mode
+                  </button>
+                </div>
+                <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
+                  <p style={{ marginBottom: '0.5rem' }}>Session</p>
+                  <button className="primary-button" onClick={onLogout}>
+                    Log Out
+                  </button>
+                </div>
+              </div>
+            </section>
+          </div>
+        </main>
+      )}
+
+      <ChatAgent user={user} isOpen={isNavChatOpen} setIsOpen={setIsNavChatOpen} mode="general" />
     </div>
   );
 }
 
 export default function App() {
+  const [currentPage, setCurrentPage] = useState('dashboard');
   const [memories, setMemories] = useState([]);
   const [insights, setInsights] = useState(null);
   const [searchResults, setSearchResults] = useState([]);
@@ -170,6 +273,8 @@ export default function App() {
   const [memoriesError, setMemoriesError] = useState('');
   const [searchError, setSearchError] = useState('');
   const [insightsError, setInsightsError] = useState('');
+  const [isInlineChatOpen, setIsInlineChatOpen] = useState(false);
+  const [isNavChatOpen, setIsNavChatOpen] = useState(false);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -414,6 +519,12 @@ export default function App() {
       onRefreshInsights={loadInsights}
       onExportMemories={handleExportMemories}
       onLogout={handleLogout}
+      currentPage={currentPage}
+      setCurrentPage={setCurrentPage}
+      isInlineChatOpen={isInlineChatOpen}
+      setIsInlineChatOpen={setIsInlineChatOpen}
+      isNavChatOpen={isNavChatOpen}
+      setIsNavChatOpen={setIsNavChatOpen}
     />
   );
 }

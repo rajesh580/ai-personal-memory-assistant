@@ -65,10 +65,14 @@ class EmbeddingService:
         self.collection.delete(ids=[self.build_document_id(user_id, memory_id)])
 
     def search(self, query: str, limit: int = 5) -> tuple[list[str], list[float]]:
+        count = self.collection.count()
+        if count == 0:
+            return [], []
+            
         embedding = self.embed_text(query)
         results = self.collection.query(
             query_embeddings=[embedding],
-            n_results=limit,
+            n_results=min(limit, count),
         )
         ids = results.get("ids", [[]])[0]
         distances = results.get("distances", [[]])[0]

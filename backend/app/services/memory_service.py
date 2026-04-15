@@ -123,7 +123,7 @@ class MemoryService:
                         .all()
                     }
 
-                    results = []
+                    semantic_results = []
                     for raw_id, distance in zip(ids, distances):
                         parsed = self.embedding_service.parse_document_id(raw_id)
                         if parsed is None:
@@ -136,26 +136,37 @@ class MemoryService:
                             continue
                         if not self._matches_filters(memory, mood=mood, importance=importance, tag=tag):
                             continue
-                        results.append({
+                        semantic_results.append({
                             "memory": self.to_response_dict(memory),
                             "score": max(0.0, 1.0 - float(distance)),
                             "reason": "Semantic similarity match",
                         })
 
-                    results.sort(key=lambda x: x["score"], reverse=True)
-                    return results[:limit]
+                    if semantic_results:
+                        semantic_results.sort(key=lambda x: x["score"], reverse=True)
+                        return semantic_results[:limit]
             except Exception:
                 pass
 
-        query_pattern = f"%{query}%"
+        terms = [term for term in query.strip().split() if len(term) > 2]
+        if not terms:
+            terms = [query.strip()]
+
+        conditions = []
+        for term in terms:
+            pattern = f"%{term}%"
+            conditions.append(
+                or_(
+                    Memory.title.ilike(pattern),
+                    Memory.content.ilike(pattern),
+                    Memory.mood.ilike(pattern),
+                    Memory.tags.ilike(pattern),
+                )
+            )
+
         query_builder = db.query(Memory).filter(
             Memory.user_id == user.id,
-            or_(
-                Memory.title.ilike(query_pattern),
-                Memory.content.ilike(query_pattern),
-                Memory.mood.ilike(query_pattern),
-                Memory.tags.ilike(query_pattern),
-            )
+            or_(*conditions)
         )
 
         if mood:

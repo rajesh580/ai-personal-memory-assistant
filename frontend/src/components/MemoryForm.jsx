@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import ChatAgent from './ChatAgent';
 
 const initialFormState = {
   title: '',
@@ -8,7 +9,7 @@ const initialFormState = {
   importance: 3,
 };
 
-function MemoryForm({ onCreateMemory, isSubmitting }) {
+function MemoryForm({ onCreateMemory, isSubmitting, user, isInlineChatOpen, setIsInlineChatOpen }) {
   const [formData, setFormData] = useState(initialFormState);
   const [error, setError] = useState('');
 
@@ -57,7 +58,30 @@ function MemoryForm({ onCreateMemory, isSubmitting }) {
         </div>
       </div>
 
+      <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border)', background: 'var(--bg-inset)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        <div>
+          <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>✨ AI Assistant</h3>
+          <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>Converse with your AI to naturally log a new memory.</p>
+        </div>
+        <button
+          type="button"
+          className={isInlineChatOpen ? "secondary-button" : "primary-button"}
+          style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', padding: '0.75rem', fontWeight: 'bold' }}
+          onClick={() => setIsInlineChatOpen((prev) => !prev)}
+        >
+          {isInlineChatOpen ? '❌ Close Assistant' : '💬 Open Assistant'}
+        </button>
+        {isInlineChatOpen && (
+          <div style={{ marginTop: '0.5rem', marginBottom: '-1.5rem' }}>
+            <ChatAgent user={user} isOpen={isInlineChatOpen} setIsOpen={setIsInlineChatOpen} inline={true} mode="add_memory" />
+          </div>
+        )}
+      </div>
+
       <form className="memory-form" onSubmit={handleSubmit}>
+        <div style={{ marginBottom: '1rem' }}>
+          <p className="eyebrow">Or log manually</p>
+        </div>
         <label className="field">
           <span>Title</span>
           <input

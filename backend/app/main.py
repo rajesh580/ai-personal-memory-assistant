@@ -1,4 +1,4 @@
-from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
@@ -15,6 +15,7 @@ from .schemas import (
 )
 from .services.auth_service import AuthService
 from .services.insight_service import InsightService
+from .services.chat_service import ChatService
 from .services.memory_service import MemoryService
 
 try:
@@ -63,6 +64,10 @@ def get_auth_service():
 
 def get_insight_service(memory_service: MemoryService = Depends(get_memory_service)):
     return InsightService(memory_service)
+
+
+def get_chat_service(memory_service: MemoryService = Depends(get_memory_service)):
+    return ChatService(memory_service)
 
 
 def get_current_user(
@@ -218,4 +223,20 @@ async def get_insights(
     insight_service: InsightService = Depends(get_insight_service),
     current_user: User = Depends(get_current_user),
 ):
-    return insight_service.generate_insights(db, current_user)
+    return await insight_service.generate_insights(db, current_user)
+
+
+@app.websocket("/chat/ws")
+async def chat_websocket_endpoint(
+    websocket: WebSocket,
+    token: str = Query(...),
+    mode: str = Query("general"),
+    db: Session = Depends(get_db),
+    auth_service: AuthService = Depends(get_auth_service),
+    chat_service: ChatService = Depends(get_chat_service),
+):
+    user = auth_service.get_user_by_token(db, token)
+    if not user:
+        await websocket.close(code=1008)
+        return
+    await chat_service.handle_websocket(websocket, db, user, mode)

@@ -54,7 +54,7 @@ function MemoryMiniList({ items, emptyMessage }) {
   }
 
   return (
-    <div className="mini-memory-list">
+    <div className="mini-memory-list" style={{ maxHeight: '350px', overflowY: 'auto', paddingRight: '0.5rem' }}>
       {items.map((memory) => (
         <div className="mini-memory-card" key={memory.id}>
           <div className="mini-memory-head">
