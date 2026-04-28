@@ -88,7 +88,7 @@ class ChatService:
                     messages = [{"role": "system", "content": system_prompt}] + chat_history
                     try:
                         response = await self.client.chat(
-                            model='llama3.2',
+                            model='llama3.2:1b',
                             messages=messages
                         )
                         response_text = response['message']['content']

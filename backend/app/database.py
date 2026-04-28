@@ -61,6 +61,119 @@ def ensure_schema() -> None:
         cursor.execute("CREATE INDEX IF NOT EXISTS ix_user_sessions_token ON user_sessions (token)")
         cursor.execute("CREATE INDEX IF NOT EXISTS ix_user_sessions_user_id ON user_sessions (user_id)")
 
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS notes (
+                id INTEGER PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                title VARCHAR(255),
+                content TEXT,
+                created_at DATETIME NOT NULL,
+                updated_at DATETIME NOT NULL,
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            )
+            """
+        )
+        cursor.execute("CREATE INDEX IF NOT EXISTS ix_notes_user_id ON notes (user_id)")
+
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS todos (
+                id INTEGER PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                text VARCHAR(255) NOT NULL,
+                importance VARCHAR(50),
+                completed BOOLEAN NOT NULL DEFAULT 0,
+                created_at DATETIME NOT NULL,
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            )
+            """
+        )
+        cursor.execute("CREATE INDEX IF NOT EXISTS ix_todos_user_id ON todos (user_id)")
+
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS meetings (
+                id INTEGER PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                title VARCHAR(255) NOT NULL,
+                date VARCHAR(50),
+                time VARCHAR(50),
+                with_person VARCHAR(255),
+                location VARCHAR(255),
+                type VARCHAR(50),
+                created_at DATETIME NOT NULL,
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            )
+            """
+        )
+        cursor.execute("CREATE INDEX IF NOT EXISTS ix_meetings_user_id ON meetings (user_id)")
+
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS deadlines (
+                id INTEGER PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                title VARCHAR(255) NOT NULL,
+                date VARCHAR(50),
+                priority VARCHAR(50),
+                created_at DATETIME NOT NULL,
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            )
+            """
+        )
+        cursor.execute("CREATE INDEX IF NOT EXISTS ix_deadlines_user_id ON deadlines (user_id)")
+
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS habits (
+                id INTEGER PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                name VARCHAR(255) NOT NULL,
+                streak INTEGER NOT NULL DEFAULT 0,
+                days TEXT NOT NULL DEFAULT '[false,false,false,false,false,false,false]',
+                created_at DATETIME NOT NULL,
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            )
+            """
+        )
+        cursor.execute("CREATE INDEX IF NOT EXISTS ix_habits_user_id ON habits (user_id)")
+
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS saved_dates (
+                id INTEGER PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                title VARCHAR(255) NOT NULL,
+                date VARCHAR(50) NOT NULL,
+                note TEXT,
+                created_at DATETIME NOT NULL,
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            )
+            """
+        )
+        cursor.execute("CREATE INDEX IF NOT EXISTS ix_saved_dates_user_id ON saved_dates (user_id)")
+
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS captures (
+                id INTEGER PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                type VARCHAR(50) NOT NULL,
+                content TEXT,
+                date DATETIME NOT NULL,
+                created_at DATETIME NOT NULL,
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            )
+            """
+        )
+        cursor.execute("PRAGMA table_info(captures)")
+        capture_columns = {row[1] for row in cursor.fetchall()}
+        if "audio_url" not in capture_columns:
+            cursor.execute("ALTER TABLE captures ADD COLUMN audio_url VARCHAR(500)")
+        if "image_url" not in capture_columns:
+            cursor.execute("ALTER TABLE captures ADD COLUMN image_url VARCHAR(500)")
+
         cursor.execute("PRAGMA table_info(memories)")
         memory_columns = {row[1] for row in cursor.fetchall()}
         if "user_id" not in memory_columns:

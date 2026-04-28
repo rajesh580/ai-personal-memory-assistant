@@ -29,7 +29,7 @@ To enable the local, fully private Chat Agent, install Ollama and run a lightwei
    ```
 2. Once installed, download and start the Llama 3.2 model (leave this terminal running in the background):
    ```bat
-   ollama run llama3.2
+       ollama run llama3.2:1b
    ```
 
 ## Backend setup (Windows)

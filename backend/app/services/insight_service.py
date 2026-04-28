@@ -124,7 +124,7 @@ class InsightService:
                 "Speak directly to the user (e.g., 'You have been focusing on...'). Do not use formatting like bold or lists, just a plain text paragraph."
             )
             try:
-                response = await AsyncClient().generate(model='llama3.2', prompt=prompt)
+                response = await AsyncClient().generate(model='llama3.2:1b', prompt=prompt)
                 return response['response'].strip()
             except Exception as e:
                 print(f"Failed to generate AI summary: {e}")

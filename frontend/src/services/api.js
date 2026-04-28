@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8000';
+export const API_BASE_URL = 'http://localhost:8000';
 const TOKEN_KEY = 'memory-app-auth-token';
 
 let authToken =
@@ -6,6 +6,16 @@ let authToken =
 
 export function getStoredToken() {
   return authToken;
+}
+
+export function buildApiUrl(path = '') {
+  if (!path) {
+    return API_BASE_URL;
+  }
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+  return path.startsWith('/') ? `${API_BASE_URL}${path}` : `${API_BASE_URL}/${path}`;
 }
 
 export function setAuthToken(token) {
@@ -20,7 +30,7 @@ export function setAuthToken(token) {
 }
 
 async function request(path, options = {}) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(buildApiUrl(path), {
     headers: {
       'Content-Type': 'application/json',
       ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
