@@ -9,7 +9,7 @@ const initialFormState = {
   importance: 3,
 };
 
-function MemoryForm({ onCreateMemory, isSubmitting, user, isInlineChatOpen, setIsInlineChatOpen }) {
+function MemoryForm({ onCreateMemory, isSubmitting, user, isInlineChatOpen, setIsInlineChatOpen, onMemoryChange }) {
   const [formData, setFormData] = useState(initialFormState);
   const [error, setError] = useState('');
 
@@ -73,7 +73,14 @@ function MemoryForm({ onCreateMemory, isSubmitting, user, isInlineChatOpen, setI
         </button>
         {isInlineChatOpen && (
           <div style={{ marginTop: '0.5rem', marginBottom: '-1.5rem' }}>
-            <ChatAgent user={user} isOpen={isInlineChatOpen} setIsOpen={setIsInlineChatOpen} inline={true} mode="add_memory" />
+            <ChatAgent
+              user={user}
+              isOpen={isInlineChatOpen}
+              setIsOpen={setIsInlineChatOpen}
+              inline={true}
+              mode="add_memory"
+              onMemoryChange={onMemoryChange}
+            />
           </div>
         )}
       </div>

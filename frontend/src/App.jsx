@@ -118,6 +118,7 @@ function AppContent({
   onClearSearch,
   onDeleteMemory,
   onUpdateMemory,
+  onMemoryChange,
   onRefreshInsights,
   onExportMemories,
   onLogout,
@@ -521,6 +522,7 @@ function AppContent({
                   user={user}
                   isInlineChatOpen={isInlineChatOpen}
                   setIsInlineChatOpen={setIsInlineChatOpen}
+                  onMemoryChange={onMemoryChange}
                 />
               </div>
               <div className="panel">
@@ -1635,6 +1637,11 @@ export default function App() {
     }
   }
 
+  async function handleMemoryMutation() {
+    await loadMemories();
+    await loadInsights();
+  }
+
   async function handleSearch(payload) {
     setSearchError('');
     setIsSearching(true);
@@ -2107,6 +2114,7 @@ export default function App() {
       onClearSearch={handleClearSearch}
       onDeleteMemory={handleDeleteMemory}
       onUpdateMemory={handleUpdateMemory}
+      onMemoryChange={handleMemoryMutation}
       onRefreshInsights={loadInsights}
       onExportMemories={handleExportMemories}
       onLogout={handleLogout}

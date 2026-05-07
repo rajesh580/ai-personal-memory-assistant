@@ -47,7 +47,8 @@ To enable the local, fully private Chat Agent, install Ollama and run a lightwei
    ```bat
    python -m pip install -r backend/requirements.txt
    ```
-5. Run the FastAPI backend:
+5. The AI chat and AI memory-saving flow require the `ollama` Python package from `backend/requirements.txt` and a running local Ollama model.
+6. Run the FastAPI backend:
    ```bat
    python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000 --app-dir backend
    ```
@@ -101,6 +102,7 @@ gh repo create <repo-name> --public --source=. --remote=origin
 - Memory export is available at `GET /memories/export/all`.
 - Search is available at `POST /search` with `query`, optional `mood`, `tag`, `importance`, and `limit`.
 - For local development, start the backend with `--app-dir backend`; omitting it can cause startup/import failures and the frontend may show `Failed to fetch`.
+- If AI chat opens but does not save memories, verify all three pieces are running: the FastAPI backend, the Ollama app/service, and the `llama3.2:1b` model.
 - Existing shared memories from older versions are assigned to a local legacy account during schema upgrade.
 - Keep `.venv/`, `node_modules/`, and local database files out of source control.
 - Run backend and frontend separately while developing.

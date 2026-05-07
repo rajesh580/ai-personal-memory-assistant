@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { getStoredToken } from '../services/api';
 
-function ChatAgent({ user, isOpen, setIsOpen, inline = false, mode = 'general' }) {
+function ChatAgent({ user, isOpen, setIsOpen, inline = false, mode = 'general', onMemoryChange }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
   const wsRef = useRef(null);
   const scrollContainerRef = useRef(null);
 
@@ -27,6 +28,18 @@ function ChatAgent({ user, isOpen, setIsOpen, inline = false, mode = 'general' }
             }
             return [...prev, data];
           });
+          if (['memory_saved', 'memory_updated', 'memory_deleted'].includes(data.type)) {
+            setStatusMessage(
+              data.type === 'memory_saved'
+                ? 'Memory saved.'
+                : data.type === 'memory_updated'
+                  ? 'Memory updated.'
+                  : 'Memory deleted.'
+            );
+            onMemoryChange?.(data);
+          } else {
+            setStatusMessage('');
+          }
           setIsTyping(false);
         };
         wsRef.current.onclose = () => {
@@ -130,6 +143,12 @@ function ChatAgent({ user, isOpen, setIsOpen, inline = false, mode = 'general' }
         })}
         {isTyping && <div style={{ alignSelf: 'flex-start', color: 'var(--text-muted)', fontSize: '0.9rem', padding: '0 0.5rem' }}>Agent is typing...</div>}
       </div>
+
+      {statusMessage ? (
+        <div style={{ padding: '0.75rem 1rem 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+          {statusMessage}
+        </div>
+      ) : null}
 
       <form onSubmit={handleSend} style={{ display: 'flex', padding: '1rem', borderTop: '1px solid var(--border)', gap: '0.5rem', background: 'var(--bg)' }}>
         <input

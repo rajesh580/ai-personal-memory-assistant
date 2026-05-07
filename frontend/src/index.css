@@ -1697,6 +1697,55 @@ select.inp option {
   margin-top: 18px;
 }
 
+.memory-edit-form .field,
+.memory-edit-form .form-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.memory-edit-form .field span {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.memory-edit-form input,
+.memory-edit-form textarea,
+.memory-edit-form select {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-muted);
+  color: var(--text);
+  padding: 14px 16px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.memory-edit-form textarea {
+  min-height: 140px;
+  resize: vertical;
+}
+
+.memory-edit-form input:focus,
+.memory-edit-form textarea:focus,
+.memory-edit-form select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 16%, transparent);
+}
+
+.memory-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.memory-card-top-right {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
 .memory-card .field {
   margin-bottom: 0;
 }

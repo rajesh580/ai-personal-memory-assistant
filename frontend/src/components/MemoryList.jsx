@@ -140,9 +140,14 @@ function MemoryCard({ memory, onDeleteMemory, onUpdateMemory }) {
               onChange={handleChange}
             />
           </label>
-          <button type="button" className="primary-button" onClick={handleSave}>
-            Save changes
-          </button>
+          <div className="memory-edit-actions">
+            <button type="button" className="secondary-button" onClick={() => setIsEditing(false)}>
+              Cancel
+            </button>
+            <button type="button" className="primary-button" onClick={handleSave}>
+              Save changes
+            </button>
+          </div>
         </div>
       ) : (
         <>
